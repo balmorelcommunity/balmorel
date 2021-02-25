@@ -116,7 +116,9 @@ $ifi not dexist "../output/temp"         execute 'mkdir -p "../output/temp"';
 *-------------------------------------------------------------------------------
 *-------------------------------------------------------------------------------
 * In case of Model Balbase4 the following included file substitutes the remaining part of the present file Balmorel.gms:
-$ifi %BB4%==yes $include '../../base/model/Balmorelbb4.inc';
+* Use local file if it exists, otherwise use the one in folder  ../../base/model/.
+$ifi %BB4%==yes $ifi     exist 'Balmorelbb4.inc'  $include  'Balmorelbb4.inc';
+$ifi %BB4%==yes $ifi not exist 'Balmorelbb4.inc'  $include  '../../base/model/Balmorelbb4.inc';
 $ifi %BB4%==yes $goto ENDOFMODEL
 *-------------------------------------------------------------------------------
 *-------------------------------------------------------------------------------
@@ -3220,9 +3222,8 @@ $ifi %X3V%==yes $INCLUDE '../../base/addons/x3v/model/x3vgdx.inc';
 *--- End: Results which can be transfered between simulations are placed here --
 
 *----- End of model:------------------------------------------------------------
-$include "../../base/addons/_hooks/endofmodel_pre.inc"
 $label ENDOFMODEL
-$include "../../base/addons/_hooks/endofmodel_post.inc"
+$ifi %all_endofmodelgdx%==yes execute_unload "all_endofmodel.gdx";
 *----- End of model ------------------------------------------------------------
 
 
@@ -3300,11 +3301,6 @@ $ifi %MERGESAVEPOINTRESULTS%==yes  execute 'mv ./diffile.gdx ./"%relpathoutput%%
 
 
 $label endofUNIXoutput
-
-*--- Main results calculation -----------------------------------------------
-$ifi %OUTPUT_SUMMARY%==yes $if     EXIST '../../base/output/OUTPUT_SUMMARY.inc' $INCLUDE         '../../base/output/OUTPUT_SUMMARY.inc';
-*--- End of Main results calculation ---------------------------------------
-
 
 *----- End of file:------------------------------------------------------------
 $label endoffile

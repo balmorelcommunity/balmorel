@@ -1,18 +1,47 @@
-* File HYRSBB123addobj.inc for the Balmorel model.
-* For use with addon HYRSBB123.
 * Included into the objective function QOBJ in Balmorel.gms.
 
-$ifi %HYRSBB123%==none    $goto label_no_hydro_results_import
 
-$ifi %HYRSBB123%==price       + SUM((IA,IGHYRS)$IAGK_HASORPOT(Y,IA,IGHYRS), SUM((IS3,T), WATERVAL(Y,IA,IS3)* IHOURSINST(IS3,T) * VGE_T(Y,IA,IGHYRS,IS3,T)))
+$ifi not %HYRSBB123%==price    $goto label_no_hydro_price
+                                       +    SUM((IA,S,T)$(IS3(S) AND SUM(IGHYRS,IAGK_HASORPOT(Y,IA,IGHYRS))),
+                                             IHOURFRAC*IHOURSINST(S,T)*WATERVAL(Y,IA,S)*SUM(IGHYRS$IAGK_HASORPOT(Y,IA,IGHYRS),VGE_T(Y,IA,IGHYRS,S,T)+VHYRS_CURT(Y,IA,IGHYRS,S,T))
+                                             )
+$label label_no_hydro_price
 
 
+$ifi not %ADDESTOVOLTS%==price    $goto label_no_interseasonal_electricity_storage_price
+                                   +SUM((S,T,IA,IGESTOS)$(IS3(S) AND IAGK_HASORPOT(Y,IA,IGESTOS)),
+                                                 IHOURFRAC*IHOURSINST(S,T)*ESTOVOLTSVAL(Y,IA,IGESTOS,S,T)*(VGE_T(Y,IA,IGESTOS,S,T)/GDATA(IGESTOS,'GDFE')-VESTOLOADTS(Y,IA,IGESTOS,S,T))
+                                   )
+$label label_no_interseasonal_electricity_storage_price
 
-$ontext
-$ifi %HYRSBB123%==price       + SUM(IAGK_HASORPOT(IY411,IA,IGHYRS),SUM((IS3,T), IWATERVAL_Y(Y,IA,IS3)* IHOURSINST(IS3,T) * VGE_T(Y,IA,IGHYRS,IS3,T)))
+$ifi not %ADDHSTOVOLTS%==price    $goto label_no_interseasonal_heat_storage_price
+                                   +SUM((S,T,IA,IGHSTOS)$(IS3(S) AND IAGK_HASORPOT(Y,IA,IGHSTOS)),
+                                                 IHOURFRAC*IHOURSINST(S,T)*HSTOVOLTSVAL(Y,IA,IGHSTOS,S,T)*(VGH_T(Y,IA,IGHSTOS,S,T)/GDATA(IGHSTOS,'GDFE')-VHSTOLOADTS(Y,IA,IGHSTOS,S,T))
+                                   )
+$label label_no_interseasonal_heat_storage_price
 
-$ifi %HYRSBB123%==quantprice  + SUM(IAGK_HASORPOT(IY411,IA,IGHYRS),SUM((IS3,T), IWATERVAL_Y(IA,IS3)* IHOURSINST(IS3,T) * VGE_T(Y,IA,IGHYRS,IS3,T)))   !!  no investments in  BB3
-$ifi %HYRSBB123%==quantprice  + SUM((IA,IS3)$IHYRSBB123G_Y(IA,IS3), (SUM(T,IHOURSINST(IS3,T)))* SUM(IHYRSBB12DELTASET, VIHYRSBB12DELTAMHW(IA,IHYRSBB12DELTASET) *IHYRSBB123EXTRAVAL(IA,IS3,IHYRSBB12DELTASET)))
-$offtext
+$ifi not %ADDESTOVOLT%==price    $goto label_no_intraseasonal_electricity_storage_price
+                                       +  SUM((S,T,IA,IGESTO)$(IS3(S) AND IAGK_HASORPOT(Y,IA,IGESTO)),
+                                                 IHOURFRAC*IHOURSINST(S,T)*ESTOVOLTVAL(Y,IA,IGESTO,S,T)*(VGE_T(Y,IA,IGESTO,S,T)/GDATA(IGESTO,'GDFE')-VESTOLOADT(Y,IA,IGESTO,S,T))
+                                         )
+$label label_no_intraseasonal_electricity_storage_price
 
-$label label_no_hydro_results_import
+$ifi not %ADDHSTOVOLT%==price    $goto label_no_intraseasonal_heat_storage_price
+                                       +  SUM((S,T,IA,IGHSTO)$(IS3(S) AND IAGK_HASORPOT(Y,IA,IGHSTO)),
+                                                 IHOURFRAC*IHOURSINST(S,T)*HSTOVOLTVAL(Y,IA,IGHSTO,S,T)*(VGH_T(Y,IA,IGHSTO,S,T)/GDATA(IGHSTO,'GDFE')-VHSTOLOADT(Y,IA,IGHSTO,S,T))
+                                         )
+$label label_no_intraseasonal_heat_storage_price
+
+
+$ifi not %HYDROGEN%==yes  $goto label_no_hydrogen
+$ifi not %ADDH2STOVOLTS%==price    $goto label_no_interseasonal_hydrogen_storage_price
+                                   +SUM((S,T,IA,IHYDROGEN_GH2STO)$(IS3(S) AND IAGK_HASORPOT(Y,IA,IHYDROGEN_GH2STO)),
+                                                 IHOURFRAC*IHOURSINST(S,T)*H2STOVOLTSVAL(Y,IA,IHYDROGEN_GH2STO,S,T)*(VHYDROGEN_GH2_T(Y,IA,IHYDROGEN_GH2STO,S,T)/GDATA(IHYDROGEN_GH2STO,'GDFE')-VHYDROGEN_STOLOADT(Y,IA,IHYDROGEN_GH2STO,S,T))
+                                   )
+$label label_no_interseasonal_hydrogen_storage_price
+$ifi not %ADDBIOMETHSTOVOLTS%==price    $goto label_no_interseasonal_biomethane_storage_price
+                                   +SUM((S,T)$(IS3(S) AND SUM((IA,IGBIOMETHANE),IAGK_HASORPOT(Y,IA,IGBIOMETHANE)) AND SUM((IA,IHYDROGEN_GH2TOBIOMETH),IAGK_HASORPOT(Y,IA,IHYDROGEN_GH2TOBIOMETH))),
+                                                 IHOURFRAC*IHOURSINST(S,T)*BIOMETHSTOVOLTSVAL(Y,S,T)*(VBIOMETH_STOUNLOADT(Y,S,T)-VBIOMETH_STOLOADT(Y,S,T))
+                                   )
+$label label_no_interseasonal_biomethane_storage_price
+$label label_no_hydrogen
